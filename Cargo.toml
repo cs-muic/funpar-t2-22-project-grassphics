@@ -1,22 +1,9 @@
 [package]
-name = "grass-opengl"
-description = "OpenGL tutorials for Rust"
-repository = "https://github.com/rust-tutorials/learn-opengl"
-version = "0.0.1-alpha.0"
-authors = ["Lokathor <zefria@gmail.com>"]
-edition = "2018"
-license = "Zlib"
+name = "othello"
+version = "0.1.0"
+edition = "2021"
 
-publish = false
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bytemuck = "1"
-ogl33 = { version = "0.2", features = ["debug_error_checks"]}
-ultraviolet = "0.7"
-
-# these should be dev dependencies, but i use the bin directory
-# during dev so they live here, except during a crates.io release
-beryllium = "0.2.0-alpha.4"
-imagine = "0.0.5"
-
-[dev-dependencies]
+rayon = "1.7"
