@@ -16,7 +16,7 @@ fn main(){
         }
     }
     let (white, black) = count_winnings(&board);
-    board_class::print_board(&board);
+    board_class::print_board(&board, player);
     if white == black {println!("Tie-------------------\nWhite: {}\nBlack: {}", white, black)}
     if white > black {println!("White wins-------------------\nWhite: {}\nBlack: {}", white, black)}
     if white < black {println!("Black wins-------------------\nWhite: {}\nBlack: {}", white, black)}

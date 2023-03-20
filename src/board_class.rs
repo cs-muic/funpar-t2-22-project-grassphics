@@ -1,3 +1,6 @@
+use crate::rules;
+use colored::Colorize;
+
 //create a board where true -> white; false -> black
 pub fn create_board() -> Vec<Vec<Option<bool>>>{
     let mut board = Vec::new();
@@ -14,12 +17,15 @@ pub fn create_board() -> Vec<Vec<Option<bool>>>{
 }
 
 //print the entire board
-pub fn print_board(board: &Vec<Vec<Option<bool>>>){
-    for row in board{
-        for item in row{ match item {
-            None => print!("X "),
+pub fn print_board(board: &Vec<Vec<Option<bool>>>, player: bool){
+    for row in 0..8{
+        for item in 0..8{ match board[row][item] {
+            None => {
+                if rules::is_legal(row, item, board, player){ print!("{}", "O ".red()); }
+                else {print!("{}","■ ".green());}
+            },
             Some(v) => {
-                if *v { print!("■ "); }
+                if v { print!("■ "); }
                 else { print!("□ "); }
             }
         } 
