@@ -1,10 +1,10 @@
 use crate::{rules, board_class};
 
 pub fn get_move(board: &Vec<Vec<Option<bool>>>, player: bool) -> (usize, usize) {
-    board_class::print_board(board);
+    board_class::print_board(board, player);
     let mut line = String::new();
-    if player {println!("White:\nEnter move :");}
-    else {println!("Black:\nEnter move :");}
+    if player {println!("\nWhite, Enter move :");}
+    else {println!("\nBlack, Enter move :");}
     let _move_input = std::io::stdin().read_line(&mut line).unwrap();
 
     if line.len() != 4 { println!("Invalid length"); return get_move(board, player) }
