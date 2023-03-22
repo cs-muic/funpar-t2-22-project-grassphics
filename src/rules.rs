@@ -23,6 +23,15 @@ pub fn has_legal(board: &Vec<Vec<Option<bool>>>, player: bool) -> bool{
     false
 }
 
+///get all possible legal spots to place a chip
+pub fn all_legal(board: &Vec<Vec<Option<bool>>>, player: bool) -> Vec<usize>{
+    let mut moves = Vec::new();
+    for i in 0..64{
+        if is_legal(i/8, i%8, board, player) { moves.push(i); }
+    }
+    moves
+}
+
 pub fn flippable(x: usize, y: usize, board: &Vec<Vec<Option<bool>>>, player: bool, pinged: bool, row: usize, col: usize) -> bool {
     if (col + y) < 1 || (col + y) > 8 || (row + x) < 1 || (row + x) > 8 { return false }
     match board[x+row-1][y+col-1]{
