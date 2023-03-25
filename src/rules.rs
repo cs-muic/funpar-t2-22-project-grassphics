@@ -26,10 +26,7 @@ pub fn has_legal(board: &Vec<Vec<Option<bool>>>, player: bool) -> bool{
 }
 
 ///get all possible legal spots to place a chip 2D board
-<<<<<<< HEAD
 #[allow(dead_code)]
-=======
->>>>>>> main
 pub fn all_legal(board: &Vec<Vec<Option<bool>>>, player: bool) -> Vec<usize>{
     let mut moves = Vec::new();
     for i in 0..64{
@@ -52,6 +49,7 @@ pub fn flippable(x: usize, y: usize, board: &Vec<Vec<Option<bool>>>, player: boo
 }
 
 ///check who wins in 2D
+#[allow(unused_variables)]
 pub fn count_winnings(board: &Vec<Vec<Option<bool>>>) -> (i32, i32){
     board.par_iter().fold(
         ||(0, 0), |base, row| 

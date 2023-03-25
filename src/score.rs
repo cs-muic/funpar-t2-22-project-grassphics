@@ -13,4 +13,7 @@ pub fn score_count(board: &Vec<Option<bool>>, player: bool, turn_count: usize) -
         });
     }
     score
+
+    // Haven't came up with a good enough matrix so its gonna stay like this for now... Too Bad! ^^
+    // TODO: Make this one more fine tuned
 }

@@ -5,13 +5,23 @@ mod board_class;
 mod rules;
 mod score;
 mod one_dim;
+mod bot;
 
 fn main(){
     let mut board = board_class::create_board();
     let mut player = false;
-    while rules::has_legal(&board, player){
-        let (col, row) = input_move::get_move(&board, player);
-        board = input_move::place_chip(row, col, &board, player);
+    while rules::has_legal(&board, player){ 
+        if player {
+            let (col,row) = bot::minimax(&board, 0); //no move count set yet
+            board_class::print_board(&board, player);
+            println!("Bot moves at: {} {}\n",col,row); 
+            board = input_move::place_chip(row, col, &board, player)
+        }
+        else {
+            let (col, row) = input_move::get_move(&board, player);
+            println!("{} {}",col,row); // for debugging
+            board = input_move::place_chip(row, col, &board, player);
+        }
         player = !player;
         if !rules::has_legal(&board, player) {
             player = !player;
@@ -22,6 +32,11 @@ fn main(){
     if white == black {println!("Tie-------------------\nWhite: {}\nBlack: {}", white, black)}
     if white > black {println!("White wins-------------------\nWhite: {}\nBlack: {}", white, black)}
     if white < black {println!("Black wins-------------------\nWhite: {}\nBlack: {}", white, black)}
+}
+
+#[cfg(test)]
+mod test{
+
 }
 /*
 test graveyard:

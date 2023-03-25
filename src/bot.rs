@@ -1,4 +1,4 @@
-use crate::{rules};
+use crate::{one_dim,score};
 use rayon::iter::*;
 
 /** MINIMAX CODE NOTES
@@ -9,7 +9,7 @@ use rayon::iter::*;
  *      > Any possible ways to handle generating new board from previous
  *        (multiple reads at the same time?) such that there is less operation 
  *        need to be done.
- *      > Should intermediate steps be calculated too? 
+ *      > Should intermediate steps be calculated accumulatively? 
  * 
  * Current Design: 
  *      > The maximum depth of pre calculated move is 5
@@ -20,11 +20,8 @@ use rayon::iter::*;
  *      > At depth 5, the moves will be calculated sequentially
  * 
  * Missing Functions:
- *      > place_disc_flatten(board: Vec<Option<bool>>, current_move: usize, turn: bool) -> Vec<Option<bool>>
  *      > game_result(board: &Vec<Option<bool>>) -> Option(u8) // not_ended None, won Some(1), lose Some(2), tie Some(0) 
- *      > scoring function <compare both position and current state>
- *      > to_position(position: usize) -> (usize,usize)
- * --------------------------------------------------------------------------------
+ * ---------------------------------------------------------------------------------------------------------------------
  */
 
 /**  
@@ -38,14 +35,17 @@ use rayon::iter::*;
  * ↪ return the move to make in (usize,usize)
  */
 #[allow(dead_code)]
-pub fn minimax(board: &Vec<Vec<Option<bool>>>, moves: u8) -> (usize, usize){ 
-    let f_board: Vec<Option<bool>> = rules::flatten_board(board);
-    let routes = rules::all_legal_flat(&f_board, true);    
-    if routes.len() == 1 {return to_position(*routes.get(0).unwrap())} //TODO: Handle proper return, OR HANDLE THIS IN THE MAIN FUNCTION
-
-    let best_move = *minimax_help(f_board, true, 1, moves).iter().enumerate().max_by_key(|i,&v| v).unwrap().1;
-
-    to_position(best_move)
+pub fn minimax(board: &Vec<Vec<Option<bool>>>, moves: usize) -> (usize, usize){ 
+    let f_board: Vec<Option<bool>> = one_dim::flatten_board(board);
+    let routes = one_dim::all_legal_flat(&f_board, true);    
+    if routes.len() == 1 {return to_pos(*routes.get(0).unwrap())} //TODO: Handle proper return, OR HANDLE THIS IN THE MAIN FUNCTION
+    println!("{:?}",routes); // for debugging
+     
+    // call minimax help here in parallel with enumerate to find the best possible move to proceed
+    let best_move: usize = par_search(f_board,true,1,moves).iter().enumerate().max().unwrap().0; 
+    //let best_move = minimax_help(f_board, true, 1, moves).iter().enumerate().max_by_key(|i,&v| v).unwrap().0; 
+    println!("{}", routes.get(best_move.clone()).unwrap()); // for debugging
+    to_pos(*routes.get(best_move).unwrap())
 }
 
 /**
@@ -53,61 +53,93 @@ pub fn minimax(board: &Vec<Vec<Option<bool>>>, moves: u8) -> (usize, usize){
  * or serialized to find the optimal moves.
  * 
  * board: board in the previous step
- * turn: true if max, false if min
+ * turn: true if max, false if min <going by the assumption the function will always starts with true due to it being called from the bot>
  * depth: count current number of turns simulated in depth
  * moves: current move count (use to determine the stage of the game)
+ * 
+ * ↪ return the score of the current path as i32 
  */
 #[allow(dead_code)]
-fn minimax_help(board: Vec<Option<bool>>, turn: bool, depth: u8, moves: u8) -> Vec<i32>{
-    let routes: Vec<usize> = rules::all_legal_flat(&board, turn);
-    //let mut scores: Vec<usize> = Vec::new(); //tmp var
-
-    if routes.len() == 1 { return minimax_help(place_disc_flatten(board, routes.get(0).unwrap(), turn), !turn, depth+1, moves+1);}
+#[allow(unused_assignments)]
+fn minimax_help(board: Vec<Option<bool>>, turn: bool, depth: u8, moves: usize) -> i32{ 
+    let routes: Vec<usize> = one_dim::all_legal_flat(&board, turn);
+    let mut scores: Vec<i32> = Vec::new(); //tmp value assignment
+    let cur_score:i32 = score::score_count(&board, turn, moves);
+    
+    if depth > 5 {return score::score_count(&board, turn, moves);}
+    if routes.len() == 1 { 
+        let (x,y)  = to_pos(*routes.get(0).unwrap());
+        return minimax_help(one_dim::place_chip_flat(x, y, &board , turn), !turn, depth+1, moves+1);
+    }
     else if routes.len() == 0{
-        if let Some(i) = game_result(&board) { Vec::from(i) } //return the points accordingly eg if win 999 lose -999 tie then some arbitary number
+        //return the points accordingly eg if win 999 lose -999 tie then some arbitary number or find a better way to handle this
+        if let Some(i) = game_result(&board) { return i ;}
         else {return minimax_help(board, !turn, depth+1, moves+1);} //Skip move
     }
     else if depth <= 3 {
-        par_search(board, turn, depth, moves)
+        scores = par_search(board, turn, depth+1, moves+1)
     }
     else if depth == 4 {
-        if routes.len() >= 16 { par_search(board, turn, depth, moves)} 
-        else {seq_search(board, turn, depth, moves)} 
+        if routes.len() >= 16 { scores = par_search(board, turn, depth+1, moves+1)} 
+        else {scores = seq_search(board, turn, depth+1, moves+1)} 
     } 
-    else if depth == 5 { seq_search(board, turn, depth, moves)}
-    //might need to add cases for depth == 6 to handle final calculation (maybe as another function call)
-    else {Vec::new()} // this is added just so that rust won't be mad
+    else if depth == 5 { scores = seq_search(board, turn, depth+1, moves+1)} // final depth
+    
+    else { return score::score_count(&board, turn, moves);} //final score calculation at max depth
 
-    /* 
-    if turn {*scores.iter().max().unwrap()}
-    else {*scores.iter().min().unwrap()}
-    */
+    
+    // return min / max based on whose turn it is
+    if turn {cur_score + *scores.iter().max().unwrap()}
+    else {cur_score + *scores.iter().min().unwrap()}
+    
      
 }
 
 /**
+ * This function calls minimax_help in sequential
+ * This funciton will be used at depth 4-5
  * 
+ * board: current state of the board
+ * turn: min/ max player
+ * depth: depth of the simulation
+ * moves: current moves in game
+ * ↪ returns a Vector of the score
  */
-#[allow(dead_code)]
-fn seq_search(board: Vec<Option<bool>>, turn: bool, depth: u8, moves: u8) -> Vec<i32>{
+
+fn seq_search(board: Vec<Option<bool>>, turn: bool, depth: u8, moves: usize) -> Vec<i32>{
     // do we keep all the intermediate maxes and mins to calculate afterward or just calculate together with each move?
-    rules::all_legal_flat(&board, turn)
+    one_dim::all_legal_flat(&board, turn)
     .iter()
-    .map(|position| minimax_help(board, turn, depth, moves))// modification of board is required
-    .flatten()
+    .map(|position | {
+        let (x,y) = to_pos(*position);
+        let n_board = one_dim::place_chip_flat(x, y, &board, turn);
+        minimax_help(n_board, turn, depth, moves)
+        }
+    )// modification of board is required
     .collect()
 }
 
 /**
+ * This function calls minimax_help in parallel
+ * This function will be used from depth 1-3 and 4 on special case where there are >= 16 possible moves
  * 
+ * board: current state of the board
+ * turn: min/ max player
+ * depth: depth of the simulation
+ * moves: current moves in game
+ * ↪ returns a Vector of the score
  */
-#[allow(dead_code)]
-fn par_search(board: Vec<Option<bool>>, turn: bool, depth: u8, moves: u8)-> Vec<i32>{
+
+fn par_search(board: Vec<Option<bool>>, turn: bool, depth: u8, moves: usize)-> Vec<i32>{
     // do we keep all the intermediate maxes and mins to calculate afterward or just calculate together with each move?
-    rules::all_legal_flat(&board, turn)
+    one_dim::all_legal_flat(&board, turn)
     .par_iter()
-    .map(|position| minimax_help(board, turn, depth, moves))// modification of board is required
-    .flatten()
+    .map(|position | {
+        let (x,y) = to_pos(*position);
+        let n_board = one_dim::place_chip_flat(x, y, &board, turn);
+        minimax_help(n_board, turn, depth, moves)
+        }
+    )// modification of board is required
     .collect()
 }
 
@@ -115,43 +147,18 @@ fn par_search(board: Vec<Option<bool>>, turn: bool, depth: u8, moves: u8)-> Vec<
  * 
  */
 #[allow(dead_code)]
-fn scoring(board: &Vec<Option<bool>>, p_board: &Vec<Option<bool>>) -> i32 {
-    0 //TODO: Implement this
+#[allow(unused_variables)]
+fn game_result(board :&Vec<Option<bool>>) -> Option<i32>{
+    //TODO: Implement this later..., cuz we haven't came up with a good enough way to check so its gonna stay like this for now... Too Bad! ^^
+    None 
 }
 
 /**
  * This function returns the 2D position based from 1D position
+ * 
+ * flat_pos: accepts usize 1D position
+ * ↪ 2D position in tuple of usize
  */
-#[allow(dead_code)]
-fn to_position(position: usize) -> (usize,usize){
-    (0,0) //TODO: Implement this
-}
-
-
-
-
-
-
-
-
-
-
-/// Likely Will be deprecate functions ↓
-
-/**
- * Handle moves for max, generate a new Vec of movesets
- * possibly return the new Vec to minimax_help for the next moves.
- */
-#[allow(dead_code)]
-fn black(board: Vec<String>){
-    
-}
-
-/**
- * Handle moves for min, generate a new Vec of movesets
- * possibly return the new Vec to minimax_help for the next moves.
- */
-#[allow(dead_code)]
-fn white(board: Vec<String>){
-
+fn to_pos(flat_pos: usize) -> (usize,usize){ 
+    (flat_pos/8, flat_pos % 8) 
 }

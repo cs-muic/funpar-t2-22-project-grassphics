@@ -21,6 +21,7 @@ pub fn is_legal_flat(x: usize, y: usize, board: &Vec<Option<bool>>, player: bool
 }
 
 ///whether the board has a legal move in 1D
+#[allow(dead_code)]
 pub fn has_legal_flat(board: &Vec<Option<bool>>, player: bool) -> bool{
     for row in 0..8{
         for col in 0..8{
@@ -53,6 +54,7 @@ pub fn flippable_flat(x: usize, y: usize, board: &Vec<Option<bool>>, player: boo
 }
 
 ///check who wins in 1D
+#[allow(dead_code)]
 pub fn count_winnings_flat(board: &Vec<Option<bool>>) -> (i32, i32){
     board.par_iter().fold(
         ||(0, 0), |(whi, bla), item| { match item{
@@ -64,7 +66,7 @@ pub fn count_winnings_flat(board: &Vec<Option<bool>>) -> (i32, i32){
 }
 
 ///places a chip in a 1D board, returns a new board with the placed chip and modified board
-pub fn place_chip_flat(x: usize, y: usize, board: &Vec<Option<bool>>, player: bool) -> Vec<Option<bool>>{
+pub fn place_chip_flat(x: usize, y: usize, board: &Vec<Option<bool>>, player: bool) -> Vec<Option<bool>>{ //please make this function handle 1D input
     let mut board_cpy = board.clone();
     for row in 0..3{
         for col in 0..3{
