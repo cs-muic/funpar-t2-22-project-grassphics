@@ -3,6 +3,8 @@ use rules::count_winnings;
 mod input_move;
 mod board_class;
 mod rules;
+mod score;
+mod one_dim;
 
 fn main(){
     let mut board = board_class::create_board();
