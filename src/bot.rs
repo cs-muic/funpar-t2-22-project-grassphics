@@ -39,12 +39,11 @@ pub fn minimax(board: &Vec<Vec<Option<bool>>>, moves: usize) -> (usize, usize){
     let f_board: Vec<Option<bool>> = one_dim::flatten_board(board);
     let routes = one_dim::all_legal_flat(&f_board, true);    
     if routes.len() == 1 {return to_pos(*routes.get(0).unwrap())} //TODO: Handle proper return, OR HANDLE THIS IN THE MAIN FUNCTION
-    println!("{:?}",routes); // for debugging
+    println!("routes: {:?}",routes); // for debugging
      
     // call minimax help here in parallel with enumerate to find the best possible move to proceed
     let best_move: usize = par_search(f_board,true,1,moves).iter().enumerate().max().unwrap().0; 
-    //let best_move = minimax_help(f_board, true, 1, moves).iter().enumerate().max_by_key(|i,&v| v).unwrap().0; 
-    println!("{}", routes.get(best_move.clone()).unwrap()); // for debugging
+
     to_pos(*routes.get(best_move).unwrap())
 }
 
@@ -64,7 +63,7 @@ pub fn minimax(board: &Vec<Vec<Option<bool>>>, moves: usize) -> (usize, usize){
 fn minimax_help(board: Vec<Option<bool>>, turn: bool, depth: u8, moves: usize) -> i32{ 
     let routes: Vec<usize> = one_dim::all_legal_flat(&board, turn);
     let mut scores: Vec<i32> = Vec::new(); //tmp value assignment
-    let cur_score:i32 = score::score_count(&board, turn, moves);
+    let cur_score:i32 = score::score_count(&board, turn, moves); // do we keep all the intermediate maxes and mins to calculate afterward or just calculate together with each move?
     
     if depth > 5 {return score::score_count(&board, turn, moves);}
     if routes.len() == 1 { 
@@ -80,7 +79,7 @@ fn minimax_help(board: Vec<Option<bool>>, turn: bool, depth: u8, moves: usize) -
         scores = par_search(board, turn, depth+1, moves+1)
     }
     else if depth == 4 {
-        if routes.len() >= 16 { scores = par_search(board, turn, depth+1, moves+1)} 
+        if routes.len() >= 16 { scores = par_search(board, turn, depth+1, moves+1)} // chunk this and call several seq instead
         else {scores = seq_search(board, turn, depth+1, moves+1)} 
     } 
     else if depth == 5 { scores = seq_search(board, turn, depth+1, moves+1)} // final depth
@@ -107,7 +106,6 @@ fn minimax_help(board: Vec<Option<bool>>, turn: bool, depth: u8, moves: usize) -
  */
 
 fn seq_search(board: Vec<Option<bool>>, turn: bool, depth: u8, moves: usize) -> Vec<i32>{
-    // do we keep all the intermediate maxes and mins to calculate afterward or just calculate together with each move?
     one_dim::all_legal_flat(&board, turn)
     .iter()
     .map(|position | {
@@ -115,7 +113,7 @@ fn seq_search(board: Vec<Option<bool>>, turn: bool, depth: u8, moves: usize) -> 
         let n_board = one_dim::place_chip_flat(x, y, &board, turn);
         minimax_help(n_board, turn, depth, moves)
         }
-    )// modification of board is required
+    )
     .collect()
 }
 
@@ -131,7 +129,6 @@ fn seq_search(board: Vec<Option<bool>>, turn: bool, depth: u8, moves: usize) -> 
  */
 
 fn par_search(board: Vec<Option<bool>>, turn: bool, depth: u8, moves: usize)-> Vec<i32>{
-    // do we keep all the intermediate maxes and mins to calculate afterward or just calculate together with each move?
     one_dim::all_legal_flat(&board, turn)
     .par_iter()
     .map(|position | {
@@ -139,7 +136,7 @@ fn par_search(board: Vec<Option<bool>>, turn: bool, depth: u8, moves: usize)-> V
         let n_board = one_dim::place_chip_flat(x, y, &board, turn);
         minimax_help(n_board, turn, depth, moves)
         }
-    )// modification of board is required
+    )
     .collect()
 }
 
@@ -160,5 +157,5 @@ fn game_result(board :&Vec<Option<bool>>) -> Option<i32>{
  * ↪ 2D position in tuple of usize
  */
 fn to_pos(flat_pos: usize) -> (usize,usize){ 
-    (flat_pos/8, flat_pos % 8) 
+    (flat_pos % 8, flat_pos/8) 
 }

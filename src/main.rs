@@ -13,13 +13,14 @@ fn main(){
     while rules::has_legal(&board, player){ 
         if player {
             let (col,row) = bot::minimax(&board, 0); //no move count set yet
+            println!("");
             board_class::print_board(&board, player);
-            println!("Bot moves at: {} {}\n",col,row); 
-            board = input_move::place_chip(row, col, &board, player)
+            println!("Bot moves at: {}{}\n",((col+97) as u8) as char ,row + 1); 
+            board = input_move::place_chip(row, col, &board, player);
         }
         else {
             let (col, row) = input_move::get_move(&board, player);
-            println!("{} {}",col,row); // for debugging
+            //println!("{} {}",col,row); // for debugging
             board = input_move::place_chip(row, col, &board, player);
         }
         player = !player;
