@@ -1,5 +1,6 @@
 use rayon::iter::*;
 
+///legal moves in 2D board
 pub fn is_legal(x: usize, y: usize, board: &Vec<Vec<Option<bool>>>, player: bool) -> bool {
     match board[x][y]{
         Some(_v) => false,
@@ -14,6 +15,7 @@ pub fn is_legal(x: usize, y: usize, board: &Vec<Vec<Option<bool>>>, player: bool
     }
 }
 
+///whether the board has a legal move in 2D
 pub fn has_legal(board: &Vec<Vec<Option<bool>>>, player: bool) -> bool{
     for row in 0..8{
         for col in 0..8{
@@ -23,7 +25,8 @@ pub fn has_legal(board: &Vec<Vec<Option<bool>>>, player: bool) -> bool{
     false
 }
 
-///get all possible legal spots to place a chip
+///get all possible legal spots to place a chip 2D board
+#[allow(dead_code)]
 pub fn all_legal(board: &Vec<Vec<Option<bool>>>, player: bool) -> Vec<usize>{
     let mut moves = Vec::new();
     for i in 0..64{
@@ -32,6 +35,7 @@ pub fn all_legal(board: &Vec<Vec<Option<bool>>>, player: bool) -> Vec<usize>{
     moves
 }
 
+///whether a move causes a flip in 2D
 pub fn flippable(x: usize, y: usize, board: &Vec<Vec<Option<bool>>>, player: bool, pinged: bool, row: usize, col: usize) -> bool {
     if (col + y) < 1 || (col + y) > 8 || (row + x) < 1 || (row + x) > 8 { return false }
     match board[x+row-1][y+col-1]{
@@ -44,12 +48,13 @@ pub fn flippable(x: usize, y: usize, board: &Vec<Vec<Option<bool>>>, player: boo
     }
 }
 
+///check who wins in 2D
 pub fn count_winnings(board: &Vec<Vec<Option<bool>>>) -> (i32, i32){
     board.par_iter().fold(
         ||(0, 0), |base, row| 
         row.par_iter().fold(
             ||(0, 0), |(whi, bla), item| { match item{
-            None => base,
+            None => (whi, bla),
             Some(v) => {if *v { (whi + 1, bla) } else {(whi, bla+1)}}
         }})
         .reduce(||(0, 0), |(whi, bla), (otherwhi, otherbla)| 
