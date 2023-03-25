@@ -64,7 +64,7 @@ pub fn count_winnings_flat(board: &Vec<Option<bool>>) -> (i32, i32){
 }
 
 ///places a chip in a 1D board, returns a new board with the placed chip and modified board
-pub fn place_chip(x: usize, y: usize, board: &Vec<Option<bool>>, player: bool) -> Vec<Option<bool>>{
+pub fn place_chip_flat(x: usize, y: usize, board: &Vec<Option<bool>>, player: bool) -> Vec<Option<bool>>{
     let mut board_cpy = board.clone();
     for row in 0..3{
         for col in 0..3{
