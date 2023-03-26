@@ -53,7 +53,7 @@ pub fn flippable_flat(x: usize, y: usize, board: &Vec<Option<bool>>, player: boo
     }
 }
 
-///check who wins in 1D
+///check who wins in 1D, returns a value of white chips and black chips respectively in a tuple of (i32, i32)
 #[allow(dead_code)]
 pub fn count_winnings_flat(board: &Vec<Option<bool>>) -> (i32, i32){
     board.par_iter().fold(
