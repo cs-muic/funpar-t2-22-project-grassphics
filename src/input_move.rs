@@ -11,7 +11,7 @@ pub fn get_move(board: &Vec<Vec<Option<bool>>>, player: bool) -> (usize, usize) 
 
     let mut line_chr = line.chars();
     let first_letter = line_chr.next().unwrap().to_ascii_lowercase();
-    if !('a'..='z').contains(&first_letter ) { println!("Invalid first letter"); return get_move(board, player) }
+    if !('a'..='h').contains(&first_letter ) { println!("Invalid first letter"); return get_move(board, player) }
 
     let second_letter = line_chr.next().unwrap().to_digit(10);
     let second_digit = match second_letter { None => {println!("Invalid second digit"); return get_move(board, player)}, Some(v) => v, };

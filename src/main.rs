@@ -9,10 +9,11 @@ mod bot;
 
 fn main(){
     let mut board = board_class::create_board();
+    let table = board_class::edge_table();
     let mut player = false;
     while rules::has_legal(&board, player){ 
         if player {
-            let (col,row) = bot::minimax(&board, 0); //no move count set yet
+            let (col,row) = bot::minimax(&board, 0, &table); //no move count set yet
             println!("");
             board_class::print_board(&board, player);
             println!("Bot moves at: {}{}\n",((col+97) as u8) as char ,row + 1); 
@@ -37,7 +38,25 @@ fn main(){
 
 #[cfg(test)]
 mod test{
+    use crate::board_class;
 
+    #[test]
+    fn test_table(){
+        let table = board_class::edge_table();
+        let mut board: Vec<i32> = Vec::with_capacity(64);
+        unsafe {board.set_len(64);}
+        for (k, v) in table{
+            for spot in v{
+                board[spot] = k;
+            }
+        }
+        for i in 0..8{
+            for j in 0..8{
+                print!("{} ", board[i*8 + j]);
+            }
+            println!();
+        }
+    }
 }
 /*
 test graveyard:

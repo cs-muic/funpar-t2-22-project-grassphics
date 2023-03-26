@@ -1,3 +1,5 @@
+use std::collections::{BTreeMap, HashSet};
+
 use crate::{one_dim,score};
 use rayon::iter::*;
 
@@ -35,14 +37,15 @@ use rayon::iter::*;
  * ↪ return the move to make in (usize,usize)
  */
 #[allow(dead_code)]
-pub fn minimax(board: &Vec<Vec<Option<bool>>>, moves: usize) -> (usize, usize){ 
+pub fn minimax(board: &Vec<Vec<Option<bool>>>, moves: usize, map_val: &BTreeMap<i32, HashSet<usize>>) -> (usize, usize){ 
     let f_board: Vec<Option<bool>> = one_dim::flatten_board(board);
     let routes = one_dim::all_legal_flat(&f_board, BOT_SIDE);    
     if routes.len() == 1 {return to_pos(*routes.get(0).unwrap())} //TODO: Handle proper return, OR HANDLE THIS IN THE MAIN FUNCTION :3 maybe
     println!("routes: {:?}",routes); // for debugging
      
     // call minimax help here in parallel with enumerate to find the best possible move to proceed
-    let scores = par_search(f_board,true,1,moves);
+    let scores = par_search(f_board,true,1,moves,&map_val);
+    println!("scores: {:?}", scores);
     let best_move: usize = (1..scores.len()).into_iter().fold(
         (0, scores[0]), |base, i| {
             if (scores[i] > scores[0]) == BOT_SIDE { (i, scores[i]) }
@@ -68,39 +71,36 @@ const BOT_SIDE: bool = true;
  */
 #[allow(dead_code)]
 #[allow(unused_assignments)]
-fn minimax_help(board: Vec<Option<bool>>, turn: bool, depth: u8, moves: usize, routes: Vec<usize>) -> i32{ 
+fn minimax_help(board: Vec<Option<bool>>, turn: bool, depth: u8, moves: usize, map_val: &BTreeMap<i32, HashSet<usize>>) -> i32{ 
     //If depth exceeds the amount of depth we're going form return the result scores
-    if depth > DEPTH_LEVEL {return score::score_count(&board, BOT_SIDE, moves);}
-
-    let routes: Vec<usize> = one_dim::all_legal_flat(&board, turn);
+    if depth > DEPTH_LEVEL {return score::score_count(&board, BOT_SIDE, moves, &map_val);}
     let mut scores: Vec<i32> = Vec::new(); //tmp value assignment
+    let routes = one_dim::all_legal_flat(&board, turn);
 
     if routes.len() == 1 { 
         let (x,y)  = to_pos(*routes.get(0).unwrap());
         let n_board = one_dim::place_chip_flat(x, y, &board , turn);
-        let routes = one_dim::all_legal_flat(&n_board, !turn);
-        return minimax_help(n_board, !turn, depth+1, moves+1, routes);
+        return minimax_help(n_board, !turn, depth, moves+1, &map_val);
     }
     else if routes.len() == 0{
         //return the points accordingly eg if win 999 lose -999 tie then some arbitary number or find a better way to handle this
         if let Some(i) = game_result(&board, turn) { return i ;}
         else {
-            let routes = one_dim::all_legal_flat(&board, !turn);
-            return minimax_help(board, !turn, depth+1, moves+1, routes);
+            return minimax_help(board, !turn, depth+1, moves+1, &map_val);
         } //Skip move
     }
     else if depth <= DEPTH_LEVEL-2 {
-        scores = par_search(board, !turn, depth+1, moves+1)
+        scores = par_search(board, !turn, depth+1, moves+1, &map_val)
     }
     else if depth == DEPTH_LEVEL-1 {
         if routes.len() >= 16 { 
-            scores = par_search(board, !turn, depth+1, moves+1)
+            scores = par_search(board, !turn, depth+1, moves+1, &map_val)
         } // chunk this and call several seq instead
-        else {scores = seq_search(board, !turn, depth+1, moves+1)} 
+        else {scores = seq_search(board, !turn, depth+1, moves+1, &map_val)} 
     } 
-    else if depth == DEPTH_LEVEL { scores = seq_search(board, !turn, depth+1, moves+1)} 
+    else if depth == DEPTH_LEVEL { scores = seq_search(board, !turn, depth+1, moves+1, &map_val)} 
     
-    else { return score::score_count(&board, BOT_SIDE, moves);} //final score calculation at max depth
+    else { return score::score_count(&board, BOT_SIDE, moves, &map_val);} //final score calculation at max depth
     //I personally don't think this will be called but hey, a safety net won't hurt
     
     // return min / max based on whose turn it is
@@ -121,14 +121,13 @@ fn minimax_help(board: Vec<Option<bool>>, turn: bool, depth: u8, moves: usize, r
  * ↪ returns a Vector of the score
  */
 
-fn seq_search(board: Vec<Option<bool>>, turn: bool, depth: u8, moves: usize) -> Vec<i32>{
+fn seq_search(board: Vec<Option<bool>>, turn: bool, depth: u8, moves: usize, map_val: &BTreeMap<i32, HashSet<usize>>) -> Vec<i32>{
     one_dim::all_legal_flat(&board, turn)
     .iter()
     .map(|position | {
         let (x,y) = to_pos(*position);
         let n_board = one_dim::place_chip_flat(x, y, &board, turn);
-        let routes = one_dim::all_legal_flat(&n_board, turn);
-        minimax_help(n_board, turn, depth, moves, routes)
+        minimax_help(n_board, turn, depth, moves, &map_val)
         }
     )
     .collect()
@@ -145,14 +144,13 @@ fn seq_search(board: Vec<Option<bool>>, turn: bool, depth: u8, moves: usize) -> 
  * ↪ returns a Vector of the score
  */
 
-fn par_search(board: Vec<Option<bool>>, turn: bool, depth: u8, moves: usize)-> Vec<i32>{
+fn par_search(board: Vec<Option<bool>>, turn: bool, depth: u8, moves: usize, map_val: &BTreeMap<i32, HashSet<usize>>)-> Vec<i32>{
     one_dim::all_legal_flat(&board, turn)
     .par_iter()
     .map(|position | {
         let (x,y) = to_pos(*position);
         let n_board = one_dim::place_chip_flat(x, y, &board, turn);
-        let routes = one_dim::all_legal_flat(&n_board, BOT_SIDE);
-        minimax_help(n_board, turn, depth, moves, routes)
+        minimax_help(n_board, turn, depth, moves, &map_val)
         }
     )
     .collect()
@@ -168,8 +166,8 @@ fn par_search(board: Vec<Option<bool>>, turn: bool, depth: u8, moves: usize)-> V
 fn game_result(board :&Vec<Option<bool>>, turn: bool) -> Option<i32>{
     if one_dim::all_legal_flat(board, !turn).len() != 0 { return None }
     let (white, black) = one_dim::count_winnings_flat(&board);
-    if (white > black) == BOT_SIDE { Some(9999) }
-    else if (white < black) == BOT_SIDE { Some(-9999) }
+    if (white > black) == BOT_SIDE { Some(999_999_999) }
+    else if (white < black) == BOT_SIDE { Some(-999_999_999) }
     else { Some(0) }
 }
 
