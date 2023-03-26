@@ -63,7 +63,6 @@ pub fn minimax(board: &Vec<Vec<Option<bool>>>, moves: usize) -> (usize, usize){
 fn minimax_help(board: Vec<Option<bool>>, turn: bool, depth: u8, moves: usize) -> i32{ 
     let routes: Vec<usize> = one_dim::all_legal_flat(&board, turn);
     let mut scores: Vec<i32> = Vec::new(); //tmp value assignment
-    let cur_score:i32 = score::score_count(&board, turn, moves); // do we keep all the intermediate maxes and mins to calculate afterward or just calculate together with each move?
     
     if depth > 5 {return score::score_count(&board, turn, moves);}
     if routes.len() == 1 { 
@@ -82,14 +81,14 @@ fn minimax_help(board: Vec<Option<bool>>, turn: bool, depth: u8, moves: usize) -
         if routes.len() >= 16 { scores = par_search(board, turn, depth+1, moves+1)} // chunk this and call several seq instead
         else {scores = seq_search(board, turn, depth+1, moves+1)} 
     } 
-    else if depth == 5 { scores = seq_search(board, turn, depth+1, moves+1)} // final depth
+    else if depth == 5 { scores = seq_search(board, turn, depth+1, moves+1)} 
     
     else { return score::score_count(&board, turn, moves);} //final score calculation at max depth
 
     
     // return min / max based on whose turn it is
-    if turn {cur_score + *scores.iter().max().unwrap()}
-    else {cur_score + *scores.iter().min().unwrap()}
+    if turn {*scores.iter().max().unwrap()}
+    else {*scores.iter().min().unwrap()}
     
      
 }
