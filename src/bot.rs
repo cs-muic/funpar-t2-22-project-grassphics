@@ -75,13 +75,15 @@ fn minimax_help(board: Vec<Option<bool>>, turn: bool, depth: u8, moves: usize) -
         else {return minimax_help(board, !turn, depth+1, moves+1);} //Skip move
     }
     else if depth <= 3 {
-        scores = par_search(board, turn, depth+1, moves+1)
+        scores = par_search(board, !turn, depth+1, moves+1)
     }
     else if depth == 4 {
-        if routes.len() >= 16 { scores = par_search(board, turn, depth+1, moves+1)} // chunk this and call several seq instead
-        else {scores = seq_search(board, turn, depth+1, moves+1)} 
+        if routes.len() >= 16 { 
+            scores = par_search(board, !turn, depth+1, moves+1)
+        } // chunk this and call several seq instead
+        else {scores = seq_search(board, !turn, depth+1, moves+1)} 
     } 
-    else if depth == 5 { scores = seq_search(board, turn, depth+1, moves+1)} 
+    else if depth == 5 { scores = seq_search(board, !turn, depth+1, moves+1)} 
     
     else { return score::score_count(&board, turn, moves);} //final score calculation at max depth
 
