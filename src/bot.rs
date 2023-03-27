@@ -1,6 +1,5 @@
 use std::collections::{BTreeMap, HashSet};
-use colored::Colorize;
-use crate::{one_dim,score,board_class};
+use crate::{one_dim,score};
 use rayon::iter::*;
 
 /** MINIMAX CODE NOTES
@@ -106,7 +105,7 @@ fn minimax_help(board: Vec<Option<bool>>, turn: bool, depth: u8, moves: usize, m
     else { return score::score_count(&board, BOT_SIDE, moves, &map_val);} //final score calculation at max depth
     //I personally don't think this will be called but hey, a safety net won't hurt
     
-    // return min / max based on whose turn it is
+    // return min / max based on whose turn it came from
     if turn == BOT_SIDE { *scores.iter().min().unwrap() }
     else { *scores.iter().max().unwrap() }
 }

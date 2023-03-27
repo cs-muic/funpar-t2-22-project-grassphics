@@ -6,6 +6,8 @@ mod rules;
 mod score;
 mod one_dim;
 mod bot;
+mod alpha_beta;
+mod ab_score;
 
 fn main(){
     let mut board = board_class::create_board();
@@ -14,7 +16,7 @@ fn main(){
     let mut move_count = 0;
     while rules::has_legal(&board, player){ 
         if player {
-            let (col,row) = bot::minimax(&board, move_count, &table);
+            let (col,row) = alpha_beta::minimax(&board, move_count, &table);
             println!("");
             board_class::print_board(&board, player);
             println!("Bot moves at: {}{}\n",((col+97) as u8) as char ,row + 1); 
@@ -47,11 +49,12 @@ mod test{
         let table = board_class::edge_table();
         let mut board: Vec<i32> = Vec::with_capacity(64);
         unsafe {board.set_len(64);}
-        for (k, v) in table{
+        table.iter().rev().for_each(|(k, v)| {
+            println!("{}, {:?}", k, v);
             for spot in v{
-                board[spot] = k;
+                board[*spot] = *k;
             }
-        }
+        });
         for i in 0..8{
             for j in 0..8{
                 print!("{} ", board[i*8 + j]);
