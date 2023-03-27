@@ -71,7 +71,7 @@ fn early_game(board: &Vec<Option<bool>>, player: bool, map_val: &BTreeMap<i32, H
     let map_mod = if t_map != 0.0 {map/t_map} else {0.0};
     let cor_mod = if t_cor != 0.0 {cor/t_cor} else {0.0};
     let pcor_mod = if t_pcor != 0.0 {pcor/t_pcor} else {0.0};
-    mob_mod *0.25+ map_mod*0.05 + cor_mod*0.35 + pcor_mod*0.35
+    mob_mod *0.25+ map_mod*0.05 + cor_mod*0.45 + pcor_mod*0.25
 }
 
 //map + cor 
@@ -114,7 +114,7 @@ fn mid_game(board: &Vec<Option<bool>>, player: bool, map_val: &BTreeMap<i32, Has
     let cor_mod = if t_cor != 0.0 {cor/t_cor} else {0.0};
     let map_mod = if t_map != 0.0 {map/t_map} else {0.0};
     let pcor_mod = if t_pcor != 0.0 {pcor/t_pcor} else {0.0};
-    cor_mod * 0.45 + map_mod * 0.1 + pcor_mod * 0.45
+    cor_mod * 0.6 + map_mod * 0.1 + pcor_mod * 0.60
 }
 
 //chip + cor
