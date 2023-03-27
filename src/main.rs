@@ -11,9 +11,10 @@ fn main(){
     let mut board = board_class::create_board();
     let table = board_class::edge_table();
     let mut player = false;
+    let mut move_count = 0;
     while rules::has_legal(&board, player){ 
         if player {
-            let (col,row) = bot::minimax(&board, 0, &table); //no move count set yet
+            let (col,row) = bot::minimax(&board, move_count, &table);
             println!("");
             board_class::print_board(&board, player);
             println!("Bot moves at: {}{}\n",((col+97) as u8) as char ,row + 1); 
@@ -24,6 +25,7 @@ fn main(){
             //println!("{} {}",col,row); // for debugging
             board = input_move::place_chip(row, col, &board, player);
         }
+        move_count += 1;
         player = !player;
         if !rules::has_legal(&board, player) {
             player = !player;

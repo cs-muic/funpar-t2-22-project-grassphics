@@ -70,8 +70,8 @@ pub fn place_chip_flat(x: usize, y: usize, board: &Vec<Option<bool>>, player: bo
     let mut board_cpy = board.clone();
     for row in 0..3{
         for col in 0..3{
-            if !(row == 1 && col == 1) && flippable_flat(x, y, &board, player, false, row, col) { 
-                let (mut xn, mut yn) = (x, y);
+            if !(row == 1 && col == 1) && flippable_flat(y, x, &board, player, false, row, col) { 
+                let (mut xn, mut yn) = (y, x);
                 board_cpy[xn*8 + yn] = Some(player);
                 while board_cpy[(xn+row-1)*8 + yn+col-1].unwrap() != player {
                     board_cpy[(xn+row-1)*8 + yn+col-1] = Some(player);
