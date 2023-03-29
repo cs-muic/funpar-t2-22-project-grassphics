@@ -1,10 +1,10 @@
 use std::collections::{BTreeMap, HashSet};
-use crate::{one_dim, ab_score};
+use crate::{one_dim, score};
 use rayon::iter::*;
 
-/** MINIMAX CODE NOTES
+/** Alpha beta CODE NOTES
  * Direction: 
- *      > Design in such a way that it handles AB in parallel easier?
+ *      > Do Alpha Beta loosely sequential highly parallel code
  * Questions: 
  *      > DFS/BFS-esque design might be better in multithreading 
  *      > Any possible ways to handle generating new board from previous
@@ -20,9 +20,6 @@ use rayon::iter::*;
  *        there are >= 16 moves where each thread calculated 8 moves each. 
  *      > At depth 5, the moves will be calculated sequentially
  * 
- * Missing Functions:
- *      > game_result(board: &Vec<Option<bool>>) -> Option(u8) // not_ended None, won Some(1), lose Some(2), tie Some(0) 
- * ---------------------------------------------------------------------------------------------------------------------
  */
 
 /**  
@@ -37,6 +34,7 @@ use rayon::iter::*;
  * 
  * ALPHA BETA ADDITIONS: 
  * implementation of the alpha-beta idea
+ * will just handle the call in handler and deal with the rest
  */
 #[allow(dead_code)]
 pub fn minimax(board: &Vec<Vec<Option<bool>>>, moves: usize, map_val: &BTreeMap<i32, HashSet<usize>>) -> (usize, usize){ 
@@ -45,16 +43,15 @@ pub fn minimax(board: &Vec<Vec<Option<bool>>>, moves: usize, map_val: &BTreeMap<
     if routes.len() == 1 {return to_pos(*routes.get(0).unwrap())} //TODO: Handle proper return, OR HANDLE THIS IN THE MAIN FUNCTION :3 maybe
     println!("routes: {:?}",routes); // for debugging
 
-    let alpha = -1_000_000_000;
-    let beta = 1_000_000_000;
+    let alpha = -2_000_000_000;
+    let beta = 2_000_000_000;
     // call minimax help here in parallel with enumerate to find the best possible move to proceed
-    let (_scores, x, y) = ab_handler(f_board,alpha,beta,BOT_SIDE,1,moves,&map_val,false).unwrap();
+    let ans = ab_handler(f_board,alpha,beta,BOT_SIDE,1,moves,&map_val,false);
+    let (_scores, x, y) = ans.unwrap();
 
-    println!("{}, {}", x, y);
     (x, y)
 }
 
-//Since alpha-beta is faster, but considerably dumber, we'll try going deeper to balance it out
 const DEPTH_LEVEL: u8 = 5;
 const BOT_SIDE: bool = true;
 /**
@@ -66,14 +63,14 @@ const BOT_SIDE: bool = true;
  * depth: count current number of turns simulated in depth
  * moves: current move count (use to determine the stage of the game)
  * 
- * ↪ return the score of the current path as i32 
+ * ↪ return the score of the current path as i32, as well as the coordinates to get those moves
  */
 #[allow(dead_code)]
 #[allow(unused_assignments)]
 fn minimax_help(board: Vec<Option<bool>>, alpha: i32, beta: i32, turn: bool, x: usize, y: usize, depth: u8, moves: usize, map_val: &BTreeMap<i32, HashSet<usize>>) -> Option<(i32, usize, usize)>{ 
     //If depth exceeds the amount of depth we're going form return the result scores
     if depth >= DEPTH_LEVEL { return 
-        Some((ab_score::score_count(&board, BOT_SIDE, moves, &map_val), x, y));
+        Some((score::score_count(&board, BOT_SIDE, moves, &map_val), x, y));
     }
     let mut scores: Option<(i32, usize, usize)> = None; //tmp value assignment
 
@@ -84,10 +81,7 @@ fn minimax_help(board: Vec<Option<bool>>, alpha: i32, beta: i32, turn: bool, x: 
     if routes.len() == 1 {
         let (thisx,thisy)  = to_pos(*routes.get(0).unwrap());
         let n_board = one_dim::place_chip_flat(thisx, thisy, &board , !turn);
-        return match ab_handler(n_board, alpha, beta, turn, depth, moves, map_val, true){
-            None => None,
-            Some((v, _x, _y)) => Some((v, x, y))
-        }
+        return minimax_help(n_board, alpha, beta, !turn, x, y, depth, moves+1, &map_val)
     }
     else if routes.len() == 0{
         //return the points accordingly eg if win 999 lose -999 tie then some arbitary number or find a better way to handle this
@@ -105,7 +99,7 @@ fn minimax_help(board: Vec<Option<bool>>, alpha: i32, beta: i32, turn: bool, x: 
         } // chunk this and call several seq instead
         else {scores = ab_handler(board, alpha, beta, !turn, depth+1, moves+1, &map_val, true);} 
     }
-    else { return Some((ab_score::score_count(&board, BOT_SIDE, moves, &map_val), x, y));} //final score calculation at max depth
+    else { return Some((score::score_count(&board, BOT_SIDE, moves, &map_val), x, y));} //final score calculation at max depth
     //I personally don't think this will be called but hey, a safety net won't hurt
     
     match scores {
@@ -122,7 +116,7 @@ fn minimax_help(board: Vec<Option<bool>>, alpha: i32, beta: i32, turn: bool, x: 
  * turn: min/ max player
  * depth: depth of the simulation
  * moves: current moves in game
- * ↪ returns a Vector of the score
+ * ↪ returns a Vector of the score and its position
  */
 
 fn seq_search(board: &Vec<Option<bool>>, alpha: i32, beta: i32, routes: &HashSet<usize>, turn: bool, depth: u8, moves: usize, map_val: &BTreeMap<i32, HashSet<usize>>) -> Vec<(i32, usize, usize)>{
@@ -147,9 +141,7 @@ fn seq_search(board: &Vec<Option<bool>>, alpha: i32, beta: i32, routes: &HashSet
  * turn: min/ max player
  * depth: depth of the simulation
  * moves: current moves in game
- * ↪ returns a Vector of the score
- * 
- * for ab: also returns the position, alpha, beta
+ * ↪ returns a Vector of the score and its position
  */
 
 fn par_search(board: &Vec<Option<bool>>, alpha: i32, beta: i32, routes: &HashSet<usize>, turn: bool, depth: u8, moves: usize, map_val: &BTreeMap<i32, HashSet<usize>>)-> Vec<(i32, usize, usize)>{
@@ -166,7 +158,17 @@ fn par_search(board: &Vec<Option<bool>>, alpha: i32, beta: i32, routes: &HashSet
     .collect()
 }
 
-/// For AB, proceed the call in sequential chunks, returns the x, y, as well as the score
+/**Alpha beta implementation
+ * 
+ * The idea is to chunk up the value with the value map, and then commit to those values in parallel.
+ * Theoretically, it will either help reduce runtime or increase it, due to increased overhead and check...:)
+ * Requires testing to see that with Rust's parallelism, would minimax or alpha-beta be faster on average with
+ * the same scoring system
+ * 
+ * Idea:
+ * the minimizing player will change the beta value, while the maximizing player will change the alpha value
+ * 
+ */
 fn ab_handler(board: Vec<Option<bool>>, alpha: i32, beta: i32, turn: bool, depth: u8, moves: usize, map_val: &BTreeMap<i32, HashSet<usize>>, seq: bool)-> Option<(i32, usize, usize)>{
     let (mut alpha, mut beta) = (alpha, beta);
     let mut answer = None;
@@ -209,18 +211,14 @@ fn ab_handler(board: Vec<Option<bool>>, alpha: i32, beta: i32, turn: bool, depth
             let scores = if seq { seq_search(&board, alpha, beta, &vn, turn, depth, moves, map_val) } 
             else { par_search(&board, alpha, beta, &vn, turn, depth, moves, map_val) }; 
 
-            if depth == 1 {println!("{:?}", scores);}
             if scores.len() > 0 {
-                let mut wanted = if turn == BOT_SIDE { *scores.iter().max().unwrap() } 
+                let wanted = if turn == BOT_SIDE { *scores.iter().max().unwrap() } 
                 else { *scores.iter().min().unwrap() };
-
-                if vec![9, 14, 49, 54].contains(&(wanted.1+wanted.2*8)) { 
-                    wanted.0 = if turn == BOT_SIDE { -999_999_990 }  else { 999_999_990 }
-                }
                 //bot side is maximizing, else it's minimizing
                 if turn == BOT_SIDE {
                     if wanted.0 >= beta { 
                         pruned = true;
+                        answer = Some(wanted)
                     }
                     else if wanted.0 > alpha {
                         alpha = wanted.0;
@@ -230,6 +228,7 @@ fn ab_handler(board: Vec<Option<bool>>, alpha: i32, beta: i32, turn: bool, depth
                 else {
                     if wanted.0 <= alpha { 
                         pruned = true;
+                        answer = Some(wanted)
                     }
                     else if wanted.0 < beta {
                         beta = wanted.0;

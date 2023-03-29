@@ -7,7 +7,6 @@ mod score;
 mod one_dim;
 mod bot;
 mod alpha_beta;
-mod ab_score;
 
 fn main(){
     let mut board = board_class::create_board();
@@ -16,7 +15,7 @@ fn main(){
     let mut move_count = 0;
     while rules::has_legal(&board, player){ 
         if player {
-            let (col,row) = alpha_beta::minimax(&board, move_count, &table);
+            let (col,row) = bot::minimax(&board, move_count, &table);
             println!("");
             board_class::print_board(&board, player);
             println!("Bot moves at: {}{}\n",((col+97) as u8) as char ,row + 1); 
@@ -84,7 +83,7 @@ test graveyard:
     }
     board[2][3] = Some(true);
     board_class::print_board(&board);
-    println!("\nFor black pieces: ");
+    ln!("\nFor black pieces: ");
     for row in 0..8{
         for col in 0..8{ 
             if rules::is_legal(row, col, &board, false) { print!("k "); }
