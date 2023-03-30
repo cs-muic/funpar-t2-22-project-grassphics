@@ -109,7 +109,7 @@ fn early_game(board: &Vec<Option<bool>>, player: bool, map_val: &BTreeMap<i32, H
     let sta_mod = if sta_p + sta_e == 0.0 { 0.0 } else {(sta_p - sta_e) / (sta_p + sta_e)};
     let cor_mod = if t_cor != 0.0 {cor/t_cor} else {0.0};
     let pcor_mod = if t_pcor != 0.0 {pcor/t_pcor} else {0.0};
-    if sta_mod != 0.0 { cor_mod * 0.25 + sta_mod * 0.75 }
+    if sta_mod != 0.0 { cor_mod * 0.15 + sta_mod * 0.75 + pcor_mod*0.1 }
     else { pcor_mod * 0.015 + usta_mod * 0.01 + mob_mod * 0.005 }
 }
 
@@ -203,7 +203,7 @@ fn mid_game(board: &Vec<Option<bool>>, player: bool, map_val: &BTreeMap<i32, Has
         ((p_unst.len() + e_unst.len()) as f64)
     };
     let sta_mod = if sta_p + sta_e == 0.0 { 0.0 } else {(sta_p - sta_e) / (sta_p + sta_e)};
-    if sta_mod != 0.0 { cor_mod * 0.25 + sta_mod * 0.75 }
+    if sta_mod != 0.0 { cor_mod * 0.15 + sta_mod * 0.75 + pcor_mod * 0.1}
     else { pcor_mod * 0.015 + usta_mod * 0.015 }
 }
 
