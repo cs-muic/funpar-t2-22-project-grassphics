@@ -9,6 +9,7 @@ mod score;
 mod one_dim;
 mod bot;
 mod alpha_beta;
+mod seq_bot;
 
 fn timed<R, F>(f: F) -> (R, Duration) where F: Fn() -> R {
     let starting_point = Instant::now();
@@ -28,6 +29,8 @@ fn main(){
             let ((colab,rowab), t) = timed(||alpha_beta::minimax(&board, move_count, &table));
             println!("generated alphabeta move, t={}", t.as_secs_f64()); 
             abtime += t.as_secs_f64();
+            let ((_colseq,_rowseq), seqtime) = timed(||seq_bot::minimax(&board, move_count, &table));
+            println!("generated sequential minimax move, t={}", seqtime.as_secs_f64());
             let ((col,row), time) = timed(||bot::minimax(&board, move_count, &table));
             println!("generated minimax move, t={}", time.as_secs_f64());
             mmtime += time.as_secs_f64(); 
